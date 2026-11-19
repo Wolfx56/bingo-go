@@ -1,0 +1,51 @@
+# Exemple d'unité systemd pour Bingo.
+#
+# Installation :
+#   sudo install -m 755 bingo /usr/local/bin/bingo
+#   sudo install -m 644 deploy/bingo.service /etc/systemd/system/bingo.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now bingo
+#
+# Journaux : journalctl -u bingo -f
+
+[Unit]
+Description=Bingo - grilles de bingo auto-hébergées
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/bingo
+
+# Adresse d'écoute. ":8080" rend l'appli accessible depuis le réseau local ;
+# mettre "127.0.0.1:8080" pour la limiter à cette machine (derrière un reverse proxy, par exemple).
+# L'application n'a pas d'authentification : ne pas l'exposer sur Internet telle quelle.
+Environment=BINGO_ADDR=:8080
+Environment=BINGO_DB=/var/lib/bingo/bingo.db
+
+# Utilisateur système éphémère + dossier de données /var/lib/bingo créés par systemd.
+DynamicUser=yes
+StateDirectory=bingo
+WorkingDirectory=/var/lib/bingo
+
+Restart=on-failure
+RestartSec=3
+
+# Durcissement : le service n'a besoin que du réseau et de son dossier de données.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

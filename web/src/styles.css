@@ -1,0 +1,77 @@
+/* Styles globaux. Les styles Vuetify vivent dans des @layer : ces règles, hors
+   couche, sont donc prioritaires sans !important. Aucune police distante : l'appli
+   doit fonctionner hors ligne. */
+:root {
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Nunito',
+    'Segoe UI', system-ui, sans-serif;
+}
+
+html,
+body,
+.v-application {
+  font-family: var(--font-body);
+}
+
+/* Vuetify 4 ne remet plus à zéro les marges des éléments de texte. :where() garde
+   une spécificité nulle : toute classe peut redéfinir la marge. */
+:where(p, h1, h2, h3, ul, fieldset) {
+  margin: 0;
+}
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 16px 72px;
+}
+
+.page--narrow {
+  max-width: 760px;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.muted {
+  color: rgba(var(--v-theme-on-surface), 0.66);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.center-state {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+}
+
+/* Dialogues : titre aligné sur le texte, actions décollées du bord. */
+.dialog-title {
+  padding: 20px 24px 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  white-space: normal;
+}
+
+.v-card-actions {
+  padding: 8px 16px 16px;
+}

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bingo",
+      "runtimeExecutable": "go",
+      "runtimeArgs": ["run", ".", "-addr", "127.0.0.1:8080", "-db", "bingo-dev.db"],
+      "port": 8080
+    }
+  ]
+}

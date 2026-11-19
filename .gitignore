@@ -1,0 +1,12 @@
+# Binaires
+/bingo
+/build/
+
+# Base SQLite locale
+*.db
+*.db-shm
+*.db-wal
+
+# Front
+web/node_modules/
+web/dist/
