@@ -1,4 +1,5 @@
-// Package web embeds the compiled front end (web/dist) into the Go binary.
+// Package web embeds the compiled front end (web/dist) into the Go binary and
+// serves it.
 package web
 
 import (
@@ -9,8 +10,8 @@ import (
 //go:embed all:dist
 var dist embed.FS
 
-// Dist returns the contents of web/dist, as produced by `npm run build`.
-func Dist() fs.FS {
+// distFS returns the contents of web/dist, as produced by `npm run build`.
+func distFS() fs.FS {
 	sub, err := fs.Sub(dist, "dist")
 	if err != nil {
 		panic(err)

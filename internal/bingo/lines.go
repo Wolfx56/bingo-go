@@ -1,11 +1,11 @@
-package store
+package bingo
 
 import "fmt"
 
 // Line is a winning line (row, column or diagonal) whose cells are all checked.
 type Line struct {
-	Name  string `json:"name"`  // user-facing label, in French
-	Cells []int  `json:"cells"` // cell positions, from 0 to size*size-1
+	Name  string // user-facing label, in French
+	Cells []int  // cell positions, from 0 to size*size-1
 }
 
 // CompletedLines returns the fully checked lines of a size×size grid.

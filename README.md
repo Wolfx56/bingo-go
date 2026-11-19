@@ -129,12 +129,35 @@ message is shown to the user as-is, so it is in French.
 | `GET`    | `/bingos/{id}/history`                    | History of one bingo                                |
 | `GET`    | `/history`                                | Global history (`?limit=`, 1000 max)                |
 
+## Architecture
+
+The backend is split into three layers, each depending only on the one below it through an
+interface:
+
+```
+HTTP request
+    │
+internal/api      HTTP only: routing, JSON decoding/encoding, status codes.
+    │             Depends on the api.Service interface. No business logic.
+    ▼
+internal/bingo    Business only: domain model, validation rules, line detection,
+    │             history entries, use cases (bingo.Service).
+    │             Depends on the bingo.Repository interface. No HTTP, no SQL.
+    ▼
+internal/store    SQL only: schema, migrations, queries, transactions.
+                  Implements bingo.Repository on SQLite. No business decisions.
+```
+
+`main.go` wires them together: `store.Open` → `bingo.NewService` → `api.New`, plus `web.Handler`
+for the front end.
+
 ## Layout
 
 ```
-main.go               entry point: flags, HTTP server, graceful shutdown
-internal/store/       SQLite: schema, migrations, business rules, tests
-internal/api/         JSON routes + embedded front end (SPA) serving
-web/                  Vue 3 + Vuetify front end (web/dist is embedded by web/embed.go)
+main.go               entry point: flags, wiring, HTTP server, graceful shutdown
+internal/api/         api.go (routes, helpers), handlers.go, dto.go (JSON contract)
+internal/bingo/       model.go, lines.go, service.go (use cases), repository.go (interface)
+internal/store/       SQLite implementation of bingo.Repository
+web/                  Vue 3 + Vuetify front end; embed.go + handler.go embed and serve web/dist
 deploy/bingo.service  example systemd unit
 ```

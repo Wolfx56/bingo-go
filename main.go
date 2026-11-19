@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"bingo/internal/api"
+	"bingo/internal/bingo"
 	"bingo/internal/store"
 	"bingo/web"
 )
@@ -43,8 +44,13 @@ func run(addr, dbPath string) error {
 	}
 	defer st.Close()
 
+	// Wiring: SQLite repository -> business service -> HTTP handlers.
+	mux := http.NewServeMux()
+	mux.Handle("/api/", api.New(bingo.NewService(st)))
+	mux.Handle("/", web.Handler())
+
 	srv := &http.Server{
-		Handler:           api.New(st, web.Dist()),
+		Handler:           mux,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,

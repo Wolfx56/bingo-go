@@ -24,7 +24,7 @@ run: build
 test: web/node_modules
 	@mkdir -p web/dist && touch web/dist/.gitkeep
 	go vet . ./internal/... ./web
-	go test ./internal/...
+	go test ./internal/... ./web
 	cd web && npm run typecheck
 
 ## linux: Linux binaries (amd64 and arm64) in build/, ready to deploy
