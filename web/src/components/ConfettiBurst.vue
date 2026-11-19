@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Pluie de confettis décorative, jouée une fois au montage.
+// Decorative confetti burst, played once on mount.
 const tones = ['primary', 'secondary', 'success', 'info', 'error']
 const pieces = Array.from({ length: 40 }, (_, i) => ({
   tone: tones[i % tones.length],

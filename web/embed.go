@@ -1,4 +1,4 @@
-// Package web embarque le front compilé (web/dist) dans le binaire Go.
+// Package web embeds the compiled front end (web/dist) into the Go binary.
 package web
 
 import (
@@ -9,7 +9,7 @@ import (
 //go:embed all:dist
 var dist embed.FS
 
-// Dist renvoie le contenu de web/dist, produit par « npm run build ».
+// Dist returns the contents of web/dist, as produced by `npm run build`.
 func Dist() fs.FS {
 	sub, err := fs.Sub(dist, "dist")
 	if err != nil {

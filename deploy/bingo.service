@@ -1,28 +1,28 @@
-# Exemple d'unité systemd pour Bingo.
+# Example systemd unit for Bingo.
 #
-# Installation :
+# Install:
 #   sudo install -m 755 bingo /usr/local/bin/bingo
 #   sudo install -m 644 deploy/bingo.service /etc/systemd/system/bingo.service
 #   sudo systemctl daemon-reload
 #   sudo systemctl enable --now bingo
 #
-# Journaux : journalctl -u bingo -f
+# Logs: journalctl -u bingo -f
 
 [Unit]
-Description=Bingo - grilles de bingo auto-hébergées
+Description=Bingo - self-hosted bingo cards
 After=network.target
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/bingo
 
-# Adresse d'écoute. ":8080" rend l'appli accessible depuis le réseau local ;
-# mettre "127.0.0.1:8080" pour la limiter à cette machine (derrière un reverse proxy, par exemple).
-# L'application n'a pas d'authentification : ne pas l'exposer sur Internet telle quelle.
+# Listen address. ":8080" makes the app reachable from the local network;
+# use "127.0.0.1:8080" to restrict it to this machine (behind a reverse proxy, for instance).
+# The app has no authentication: do not expose it to the Internet as-is.
 Environment=BINGO_ADDR=:8080
 Environment=BINGO_DB=/var/lib/bingo/bingo.db
 
-# Utilisateur système éphémère + dossier de données /var/lib/bingo créés par systemd.
+# Ephemeral system user + /var/lib/bingo data directory, both created by systemd.
 DynamicUser=yes
 StateDirectory=bingo
 WorkingDirectory=/var/lib/bingo
@@ -30,7 +30,7 @@ WorkingDirectory=/var/lib/bingo
 Restart=on-failure
 RestartSec=3
 
-# Durcissement : le service n'a besoin que du réseau et de son dossier de données.
+# Hardening: the service only needs the network and its data directory.
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes

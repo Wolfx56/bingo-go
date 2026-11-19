@@ -16,7 +16,7 @@ const editId = route.params.id ? Number(route.params.id) : null
 const title = ref('')
 const description = ref('')
 const size = ref(5)
-// Tampon de 36 libellés : changer de taille ne perd pas ce qui a été saisi.
+// 36-label buffer: changing the grid size never loses what was typed.
 const labels = ref<string[]>(Array(MAX_CELLS).fill(''))
 const checked = ref<boolean[]>([])
 
@@ -63,7 +63,7 @@ onBeforeRouteLeave(() => {
   }
 })
 
-// --- Saisie dans la grille ---
+// --- Grid input ---
 const cellInputs = ref<HTMLTextAreaElement[]>([])
 
 function focusCell(i: number) {
@@ -79,7 +79,7 @@ function shuffle() {
   labels.value.splice(0, items.length, ...items)
 }
 
-// --- Saisie en liste (une case par ligne) ---
+// --- List input (one cell per line) ---
 const listDialog = ref(false)
 const listText = ref('')
 const listCount = computed(() => listText.value.split('\n').filter((l) => l.trim()).length)
@@ -100,7 +100,7 @@ function applyList() {
   listDialog.value = false
 }
 
-// --- Enregistrement ---
+// --- Saving ---
 async function submit() {
   submitted.value = true
   if (!title.value.trim()) {
@@ -330,7 +330,7 @@ async function submit() {
   display: grid;
   grid-template-columns: repeat(var(--n), minmax(0, 1fr));
   gap: clamp(4px, 1.2vw, 8px);
-  /* Évite des cases démesurées sur les petites grilles. */
+  /* Keeps cells from getting oversized on small grids. */
   max-width: calc(var(--n) * 150px);
 }
 
@@ -376,7 +376,7 @@ async function submit() {
   color: rgba(var(--v-theme-on-surface), 0.35);
 }
 
-/* Centre le texte verticalement là où le navigateur le permet. */
+/* Centers the text vertically where the browser supports it. */
 @supports (field-sizing: content) {
   .cell {
     align-items: center;

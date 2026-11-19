@@ -1,4 +1,7 @@
-// Package api expose l'API JSON et sert le front embarqué.
+// Package api exposes the JSON API and serves the embedded front end.
+//
+// Error messages returned to clients are displayed to the user as-is, so they
+// are written in French like the rest of the UI.
 package api
 
 import (
@@ -19,7 +22,7 @@ const maxBodyBytes = 1 << 20
 
 type server struct{ store *store.Store }
 
-// New renvoie le handler HTTP complet : API sous /api/, front (SPA) pour le reste.
+// New returns the full HTTP handler: the API under /api/, the SPA for everything else.
 func New(s *store.Store, dist fs.FS) http.Handler {
 	srv := &server{store: s}
 	mux := http.NewServeMux()
@@ -49,7 +52,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		slog.Error("écriture de la réponse", "err", err)
+		slog.Error("writing response", "err", err)
 	}
 }
 
@@ -57,7 +60,7 @@ func writeError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
 
-// fail traduit une erreur du store en réponse HTTP.
+// fail maps a store error to an HTTP response.
 func fail(w http.ResponseWriter, r *http.Request, err error) {
 	var verr *store.ValidationError
 	switch {
@@ -68,7 +71,7 @@ func fail(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.As(err, &verr):
 		writeError(w, http.StatusUnprocessableEntity, verr.Msg)
 	default:
-		slog.Error("erreur interne", "method", r.Method, "path", r.URL.Path, "err", err)
+		slog.Error("internal error", "method", r.Method, "path", r.URL.Path, "err", err)
 		writeError(w, http.StatusInternalServerError, "Erreur interne du serveur.")
 	}
 }
@@ -82,7 +85,7 @@ func pathID(w http.ResponseWriter, r *http.Request, name string) (int64, bool) {
 	return id, true
 }
 
-// decode lit le corps JSON dans v. Un corps vide est accepté si optional est vrai.
+// decode reads the JSON body into v. An empty body is accepted when optional is true.
 func decode(w http.ResponseWriter, r *http.Request, v any, optional bool) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	err := json.NewDecoder(r.Body).Decode(v)
@@ -255,19 +258,19 @@ func (s *server) history(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, events)
 }
 
-// spaHandler sert les fichiers du front ; toute route inconnue renvoie index.html
-// pour laisser le routeur Vue prendre le relais.
+// spaHandler serves the front-end files; any unknown path falls back to index.html
+// so the Vue router can take over.
 func spaHandler(dist fs.FS) http.Handler {
 	files := http.FileServerFS(dist)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			w.Header().Set("Allow", "GET, HEAD")
-			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 		name := strings.TrimPrefix(path.Clean("/"+r.URL.Path), "/")
 		if info, err := fs.Stat(dist, name); name == "" || name == "index.html" || err != nil || info.IsDir() {
-			// Un fichier statique manquant ne doit pas renvoyer du HTML avec un code 200.
+			// A missing static asset must not come back as HTML with a 200.
 			if strings.HasPrefix(name, "assets/") {
 				http.NotFound(w, r)
 				return
@@ -276,7 +279,7 @@ func spaHandler(dist fs.FS) http.Handler {
 			return
 		}
 		if strings.HasPrefix(name, "assets/") {
-			// Les fichiers de Vite sont nommés d'après leur contenu.
+			// Vite asset file names are content-hashed.
 			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		}
 		files.ServeHTTP(w, r)
@@ -286,7 +289,7 @@ func spaHandler(dist fs.FS) http.Handler {
 func serveIndex(w http.ResponseWriter, r *http.Request, dist fs.FS) {
 	index, err := fs.ReadFile(dist, "index.html")
 	if err != nil {
-		http.Error(w, "Le front n'est pas compilé : lancez « make build ».", http.StatusServiceUnavailable)
+		http.Error(w, "front end not built: run `make build`", http.StatusServiceUnavailable)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

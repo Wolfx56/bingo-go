@@ -1,6 +1,5 @@
-/* Styles globaux. Les styles Vuetify vivent dans des @layer : ces règles, hors
-   couche, sont donc prioritaires sans !important. Aucune police distante : l'appli
-   doit fonctionner hors ligne. */
+/* Global styles. Vuetify's styles live in @layers, so these unlayered rules win
+   without !important. No remote fonts: the app must work offline. */
 :root {
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-display: ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Nunito',
@@ -13,8 +12,8 @@ body,
   font-family: var(--font-body);
 }
 
-/* Vuetify 4 ne remet plus à zéro les marges des éléments de texte. :where() garde
-   une spécificité nulle : toute classe peut redéfinir la marge. */
+/* Vuetify 4 no longer resets text element margins. :where() keeps specificity at
+   zero so any class can set its own margin. */
 :where(p, h1, h2, h3, ul, fieldset) {
   margin: 0;
 }
@@ -64,7 +63,7 @@ body,
   min-height: 40vh;
 }
 
-/* Dialogues : titre aligné sur le texte, actions décollées du bord. */
+/* Dialogs: title aligned with the body text, actions kept off the edge. */
 .dialog-title {
   padding: 20px 24px 4px;
   font-family: var(--font-display);

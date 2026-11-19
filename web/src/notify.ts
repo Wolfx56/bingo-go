@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 
-// Message éphémère global, affiché par App.vue.
+// Global transient message, rendered by App.vue.
 export const snack = reactive({ show: false, text: '', color: undefined as string | undefined })
 
 export function notify(text: string, color?: string) {

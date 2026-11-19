@@ -11,7 +11,7 @@ const relativeFmt = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' })
 export const formatDateTime = (iso: string) => dateTimeFmt.format(new Date(iso))
 export const formatTime = (iso: string) => timeFmt.format(new Date(iso))
 
-/** Clé de regroupement par jour, en heure locale. */
+/** Per-day grouping key, in local time. */
 export function dayKey(iso: string): string {
   const d = new Date(iso)
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`

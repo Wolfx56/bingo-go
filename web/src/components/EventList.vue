@@ -45,7 +45,7 @@ function describe(e: BingoEvent): string {
   }
 }
 
-// Les événements arrivent du plus récent au plus ancien : on les regroupe par jour.
+// Events arrive most recent first; group them by day.
 const days = computed(() => {
   const groups: { key: string; label: string; events: BingoEvent[] }[] = []
   for (const e of props.events) {

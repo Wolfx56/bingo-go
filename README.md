@@ -1,80 +1,81 @@
 # Bingo
 
-Application de bingo auto-hébergée : on crée des grilles personnalisées (3×3 à 6×6), on valide
-les cases au fil du temps, et chaque validation est enregistrée immédiatement dans SQLite avec
-son historique.
+A self-hosted bingo app: build custom cards (3×3 to 6×6), check cells off over time, and every
+validation is saved to SQLite right away, along with its history.
 
-- **Backend** : Go (bibliothèque standard) + SQLite via `modernc.org/sqlite` (pur Go, sans CGO).
-- **Front** : Vue 3 + Vuetify 4, compilé par Vite et **embarqué dans le binaire Go**.
-- **Déploiement** : un seul binaire, un seul fichier de base. Pas d'authentification.
+- **Backend**: Go (standard library) + SQLite through `modernc.org/sqlite` (pure Go, no CGO).
+- **Front end**: Vue 3 + Vuetify 4, built with Vite and **embedded in the Go binary**.
+- **Deployment**: one binary, one database file. No authentication.
 
-## Fonctionnalités
+The UI is in French. Code, comments, logs, API routes and page URLs are in English.
 
-- Plusieurs bingos en parallèle, avec progression et aperçu de la grille sur l'accueil.
-- Création d'une grille : titre, description, taille, cases saisies une à une ou collées en liste,
-  mélange aléatoire.
-- Validation d'une case (avec note facultative) : sauvegardée à l'instant où elle est validée.
-  Une validation peut être annulée.
-- Détection des lignes, colonnes et diagonales complètes (« Bingo ! ») et de la grille complète.
-- Historique par bingo et historique global (validations, annulations, lignes complétées…).
-- Archivage (lecture seule), « Rejouer » (copie vierge d'une grille, mélangée ou non), suppression.
-- Thème clair / sombre, utilisable sur mobile, aucune ressource chargée depuis Internet.
+## Features
 
-## Prérequis
+- Several bingos side by side, with progress and a grid preview on the home page.
+- Card creation: title, description, size, cells typed one by one or pasted as a list, random
+  shuffle.
+- Cell validation (with an optional note), saved the moment it is validated. A validation can be
+  undone.
+- Detection of completed rows, columns and diagonals ("Bingo!") and of a full card.
+- Per-bingo and global history (validations, undos, completed lines…).
+- Archiving (read-only), "replay" (a fresh copy of a card, shuffled or not), deletion.
+- Light / dark theme, mobile friendly, nothing loaded from the Internet.
+
+## Requirements
 
 - Go ≥ 1.26
-- Node.js ≥ 22 et npm (uniquement pour compiler le front)
+- Node.js ≥ 22 and npm (only to build the front end)
 
-## Compiler et lancer
+## Build and run
 
 ```bash
-make build   # compile le front (web/dist) puis le binaire ./bingo
+make build   # builds the front end (web/dist), then the ./bingo binary
 ./bingo      # http://localhost:8080
 ```
 
-Le front étant embarqué à la compilation, il faut toujours compiler le front **avant** le binaire
-Go ; `make build` s'en charge.
+The front end is embedded at compile time, so it must always be built **before** the Go binary;
+`make build` takes care of that.
 
 ### Configuration
 
-| Option  | Variable d'env. | Défaut     | Rôle                                                   |
-| ------- | --------------- | ---------- | ------------------------------------------------------ |
-| `-addr` | `BINGO_ADDR`    | `:8080`    | Adresse d'écoute (`127.0.0.1:8080` pour rester en local) |
-| `-db`   | `BINGO_DB`      | `bingo.db` | Chemin du fichier SQLite (créé au premier lancement)   |
+| Flag    | Env variable | Default    | Purpose                                                     |
+| ------- | ------------ | ---------- | ----------------------------------------------------------- |
+| `-addr` | `BINGO_ADDR` | `:8080`    | Listen address (`127.0.0.1:8080` to stay on this machine)   |
+| `-db`   | `BINGO_DB`   | `bingo.db` | Path to the SQLite file (created on first start)            |
 
-L'option en ligne de commande l'emporte sur la variable d'environnement.
+A command-line flag takes precedence over its environment variable.
 
-> L'application n'a aucune authentification : quiconque atteint le port peut tout modifier.
-> À réserver au réseau local, ou à placer derrière un reverse proxy qui gère l'accès.
+> The app has no authentication: anyone who can reach the port can change everything.
+> Keep it on the local network, or put it behind a reverse proxy that handles access.
 
-## Développement
+## Development
 
-Deux terminaux :
+Two terminals:
 
 ```bash
 go run . -addr 127.0.0.1:8080 -db bingo-dev.db   # API
 ```
 
 ```bash
-cd web && npm install && npm run dev             # front avec rechargement à chaud (port 5173)
+cd web && npm install && npm run dev             # front end with hot reload (port 5173)
 ```
 
-Le serveur Vite relaie `/api` vers `localhost:8080`. `go run .` nécessite que `web/dist` existe
-(lancer `make web` une première fois).
+The Vite dev server proxies `/api` to `localhost:8080`. `go run .` needs `web/dist` to exist
+(run `make web` once first).
 
 ```bash
-make test    # go vet + tests Go + vérification des types TypeScript
+make test    # go vet + Go tests + TypeScript type check
 ```
 
-## Déploiement avec systemd
+## Deploying with systemd
 
-Un exemple d'unité est fourni dans [deploy/bingo.service](deploy/bingo.service).
+An example unit is provided in [deploy/bingo.service](deploy/bingo.service).
 
 ```bash
-make linux   # build/bingo-linux-amd64 et build/bingo-linux-arm64
+make linux   # build/bingo-linux-amd64 and build/bingo-linux-arm64
 ```
 
-Sur le serveur (copier le binaire adapté et le fichier `.service`) :
+On the server (copy the matching binary and the `.service` file over):
 
 ```bash
 sudo install -m 755 bingo-linux-amd64 /usr/local/bin/bingo
@@ -84,46 +85,56 @@ sudo systemctl enable --now bingo
 journalctl -u bingo -f
 ```
 
-L'unité utilise `DynamicUser` et `StateDirectory` : systemd crée un utilisateur dédié et le
-dossier `/var/lib/bingo`, où se trouve la base. L'adresse d'écoute se règle avec
-`Environment=BINGO_ADDR=…` dans l'unité.
+The unit uses `DynamicUser` and `StateDirectory`: systemd creates a dedicated user and the
+`/var/lib/bingo` directory, which holds the database. Change the listen address with
+`Environment=BINGO_ADDR=…` in the unit.
 
-### Sauvegarde
+### Backup
 
-Toutes les données sont dans le fichier SQLite (mode WAL). Pour une copie cohérente à chaud :
+All data lives in the SQLite file (WAL mode). For a consistent copy while the service is running:
 
 ```bash
-sudo sqlite3 /var/lib/bingo/bingo.db ".backup '/chemin/sauvegarde/bingo.db'"
+sudo sqlite3 /var/lib/bingo/bingo.db ".backup '/path/to/backup/bingo.db'"
 ```
 
-Ou arrêter le service et copier `bingo.db`.
+Or stop the service and copy `bingo.db`.
+
+## Pages
+
+| Path               | Page                          |
+| ------------------ | ----------------------------- |
+| `/`                | Bingo list (active, archived) |
+| `/new`             | Create a bingo                |
+| `/bingos/{id}`     | Play a bingo                  |
+| `/bingos/{id}/edit`| Edit a bingo                  |
+| `/history`         | Global history                |
 
 ## API
 
-Toutes les routes sont sous `/api` et échangent du JSON. Les erreurs ont la forme
-`{"error": "message"}`.
+All routes live under `/api` and exchange JSON. Errors look like `{"error": "message"}`; the
+message is shown to the user as-is, so it is in French.
 
-| Méthode  | Route                                     | Rôle                                         |
-| -------- | ----------------------------------------- | -------------------------------------------- |
-| `GET`    | `/bingos`                                 | Liste des bingos (avec progression)          |
-| `POST`   | `/bingos`                                 | Crée un bingo `{title, description, size, cells[]}` |
-| `GET`    | `/bingos/{id}`                            | Détail d'un bingo et de ses cases            |
-| `PUT`    | `/bingos/{id}`                            | Modifie titre, description et libellés       |
-| `DELETE` | `/bingos/{id}`                            | Supprime le bingo et son historique          |
-| `POST`   | `/bingos/{id}/archive`                    | Archive (lecture seule)                      |
-| `DELETE` | `/bingos/{id}/archive`                    | Désarchive                                   |
-| `POST`   | `/bingos/{id}/duplicate`                  | Copie vierge `{title, shuffle}`              |
-| `PUT`    | `/bingos/{id}/cells/{cellId}/validation`  | Valide une case `{note}`                     |
-| `DELETE` | `/bingos/{id}/cells/{cellId}/validation`  | Annule la validation                         |
-| `GET`    | `/bingos/{id}/history`                    | Historique d'un bingo                        |
-| `GET`    | `/history`                                | Historique global (`?limit=`, 1000 max)      |
+| Method   | Route                                     | Purpose                                             |
+| -------- | ----------------------------------------- | --------------------------------------------------- |
+| `GET`    | `/bingos`                                 | List bingos (with progress)                         |
+| `POST`   | `/bingos`                                 | Create a bingo `{title, description, size, cells[]}` |
+| `GET`    | `/bingos/{id}`                            | A bingo and its cells                               |
+| `PUT`    | `/bingos/{id}`                            | Update title, description and labels                |
+| `DELETE` | `/bingos/{id}`                            | Delete the bingo and its history                    |
+| `POST`   | `/bingos/{id}/archive`                    | Archive (read-only)                                 |
+| `DELETE` | `/bingos/{id}/archive`                    | Unarchive                                           |
+| `POST`   | `/bingos/{id}/duplicate`                  | Fresh copy `{title, shuffle}`                       |
+| `PUT`    | `/bingos/{id}/cells/{cellId}/validation`  | Validate a cell `{note}`                            |
+| `DELETE` | `/bingos/{id}/cells/{cellId}/validation`  | Undo the validation                                 |
+| `GET`    | `/bingos/{id}/history`                    | History of one bingo                                |
+| `GET`    | `/history`                                | Global history (`?limit=`, 1000 max)                |
 
-## Structure
+## Layout
 
 ```
-main.go               point d'entrée : options, serveur HTTP, arrêt propre
-internal/store/       SQLite : schéma, migrations, règles métier, tests
-internal/api/         routes JSON + service du front embarqué (SPA)
-web/                  front Vue 3 + Vuetify (web/dist est embarqué par web/embed.go)
-deploy/bingo.service  exemple d'unité systemd
+main.go               entry point: flags, HTTP server, graceful shutdown
+internal/store/       SQLite: schema, migrations, business rules, tests
+internal/api/         JSON routes + embedded front end (SPA) serving
+web/                  Vue 3 + Vuetify front end (web/dist is embedded by web/embed.go)
+deploy/bingo.service  example systemd unit
 ```

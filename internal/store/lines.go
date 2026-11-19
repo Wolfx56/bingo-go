@@ -2,14 +2,14 @@ package store
 
 import "fmt"
 
-// Line est une ligne gagnante (rangée, colonne ou diagonale) entièrement validée.
+// Line is a winning line (row, column or diagonal) whose cells are all checked.
 type Line struct {
-	Name  string `json:"name"`
-	Cells []int  `json:"cells"` // positions des cases, de 0 à size*size-1
+	Name  string `json:"name"`  // user-facing label, in French
+	Cells []int  `json:"cells"` // cell positions, from 0 to size*size-1
 }
 
-// CompletedLines renvoie les lignes entièrement validées d'une grille size×size.
-// checked est indexé par position (rangée par rangée).
+// CompletedLines returns the fully checked lines of a size×size grid.
+// checked is indexed by position (row by row).
 func CompletedLines(size int, checked []bool) []Line {
 	lines := make([]Line, 0)
 	if size <= 0 || len(checked) != size*size {

@@ -1,4 +1,4 @@
-// Bingo : serveur local de grilles de bingo (API JSON + front Vue embarqué, stockage SQLite).
+// Bingo is a self-hosted bingo card server: JSON API, embedded Vue front end, SQLite storage.
 package main
 
 import (
@@ -26,12 +26,12 @@ func envOr(key, fallback string) string {
 }
 
 func main() {
-	addr := flag.String("addr", envOr("BINGO_ADDR", ":8080"), "adresse d'écoute (env BINGO_ADDR)")
-	dbPath := flag.String("db", envOr("BINGO_DB", "bingo.db"), "chemin de la base SQLite (env BINGO_DB)")
+	addr := flag.String("addr", envOr("BINGO_ADDR", ":8080"), "listen address (env BINGO_ADDR)")
+	dbPath := flag.String("db", envOr("BINGO_DB", "bingo.db"), "path to the SQLite database (env BINGO_DB)")
 	flag.Parse()
 
 	if err := run(*addr, *dbPath); err != nil {
-		slog.Error("arrêt sur erreur", "err", err)
+		slog.Error("fatal error", "err", err)
 		os.Exit(1)
 	}
 }
@@ -55,7 +55,7 @@ func run(addr, dbPath string) error {
 	if err != nil {
 		return err
 	}
-	slog.Info("bingo démarré", "addr", ln.Addr().String(), "db", dbPath)
+	slog.Info("bingo started", "addr", ln.Addr().String(), "db", dbPath)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -69,7 +69,7 @@ func run(addr, dbPath string) error {
 	case <-ctx.Done():
 	}
 
-	slog.Info("arrêt en cours")
+	slog.Info("shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil && !errors.Is(err, http.ErrServerClosed) {

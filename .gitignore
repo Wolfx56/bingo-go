@@ -1,12 +1,12 @@
-# Binaires
+# Binaries
 /bingo
 /build/
 
-# Base SQLite locale
+# Local SQLite database
 *.db
 *.db-shm
 *.db-wal
 
-# Front
+# Front end
 web/node_modules/
 web/dist/

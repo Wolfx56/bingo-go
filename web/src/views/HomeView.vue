@@ -32,7 +32,7 @@ onMounted(load)
   <div class="page">
     <header class="head">
       <h1 class="page-title">Mes bingos</h1>
-      <v-btn to="/nouveau" color="primary" variant="flat" size="large" :prepend-icon="mdiPlus">
+      <v-btn to="/new" color="primary" variant="flat" size="large" :prepend-icon="mdiPlus">
         Nouveau bingo
       </v-btn>
     </header>
@@ -53,7 +53,7 @@ onMounted(load)
       text="Créez votre première grille : donnez-lui un titre, remplissez les cases, puis validez-les au fil du temps."
     >
       <template #actions>
-        <v-btn to="/nouveau" color="primary" variant="flat" :prepend-icon="mdiPlus">Créer un bingo</v-btn>
+        <v-btn to="/new" color="primary" variant="flat" :prepend-icon="mdiPlus">Créer un bingo</v-btn>
       </template>
     </v-empty-state>
 

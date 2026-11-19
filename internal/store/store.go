@@ -1,5 +1,8 @@
-// Package store gère la persistance SQLite des bingos, de leurs cases et de
-// l'historique des validations.
+// Package store handles SQLite persistence for bingos, their cells and the
+// validation history.
+//
+// ValidationError messages and line names end up in front of the user, so they
+// are written in French like the rest of the UI.
 package store
 
 import (
@@ -15,7 +18,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	_ "modernc.org/sqlite" // pilote SQLite pur Go (pas de CGO)
+	_ "modernc.org/sqlite" // pure-Go SQLite driver (no CGO)
 )
 
 const (
@@ -27,11 +30,11 @@ const (
 	maxLabelLen = 200
 	maxNoteLen  = 1000
 
-	// Largeur fixe : l'ordre lexicographique suit l'ordre chronologique.
+	// Fixed width, so lexicographic order matches chronological order.
 	timeLayout = "2006-01-02T15:04:05.000Z"
 )
 
-// Types d'événements de l'historique.
+// History event kinds.
 const (
 	EventCreated     = "created"
 	EventValidated   = "validated"
@@ -43,11 +46,11 @@ const (
 )
 
 var (
-	ErrNotFound = errors.New("introuvable")
-	ErrArchived = errors.New("ce bingo est archivé : désarchivez-le pour le modifier")
+	ErrNotFound = errors.New("not found")
+	ErrArchived = errors.New("bingo is archived")
 )
 
-// ValidationError signale une saisie invalide ; son message est destiné à l'utilisateur.
+// ValidationError reports invalid input; its message is meant for the user.
 type ValidationError struct{ Msg string }
 
 func (e *ValidationError) Error() string { return e.Msg }
@@ -70,12 +73,12 @@ type Bingo struct {
 	Description string     `json:"description"`
 	Size        int        `json:"size"`
 	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"` // dernière activité
+	UpdatedAt   time.Time  `json:"updatedAt"` // last activity
 	ArchivedAt  *time.Time `json:"archivedAt"`
 	Checked     int        `json:"checked"`
 	Total       int        `json:"total"`
-	Pattern     []bool     `json:"pattern"` // état validé de chaque case, par position
-	Lines       []Line     `json:"lines"`   // lignes complètes
+	Pattern     []bool     `json:"pattern"` // checked state of each cell, by position
+	Lines       []Line     `json:"lines"`   // completed lines
 	Cells       []Cell     `json:"cells,omitempty"`
 }
 
@@ -90,12 +93,12 @@ type Event struct {
 	CreatedAt  time.Time `json:"createdAt"`
 }
 
-// BingoInput décrit un bingo à créer ou à modifier.
+// BingoInput describes a bingo to create or update.
 type BingoInput struct {
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Size        int      `json:"size"`
-	Cells       []string `json:"cells"` // libellés, rangée par rangée
+	Cells       []string `json:"cells"` // labels, row by row
 }
 
 func (in *BingoInput) normalize() error {
@@ -131,11 +134,11 @@ func (in *BingoInput) normalize() error {
 
 type Store struct{ db *sql.DB }
 
-// Open ouvre (et crée au besoin) la base SQLite située à path.
+// Open opens the SQLite database at path, creating it if needed.
 func Open(path string) (*Store, error) {
 	if dir := filepath.Dir(path); dir != "." {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return nil, fmt.Errorf("création du dossier de la base : %w", err)
+			return nil, fmt.Errorf("creating database directory: %w", err)
 		}
 	}
 	q := url.Values{}
@@ -146,20 +149,20 @@ func Open(path string) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Une seule connexion : SQLite n'accepte qu'un écrivain et la charge est minime.
+	// A single connection: SQLite allows one writer at a time and the load is tiny.
 	db.SetMaxOpenConns(1)
 	s := &Store{db: db}
 	if err := s.migrate(); err != nil {
 		db.Close()
-		return nil, fmt.Errorf("migration de la base : %w", err)
+		return nil, fmt.Errorf("migrating database: %w", err)
 	}
 	return s, nil
 }
 
 func (s *Store) Close() error { return s.db.Close() }
 
-// migrations est appliqué dans l'ordre ; PRAGMA user_version mémorise l'avancement.
-// Ne jamais modifier une entrée existante : en ajouter une nouvelle.
+// migrations are applied in order; PRAGMA user_version tracks progress.
+// Never edit an existing entry: append a new one.
 var migrations = []string{
 	`CREATE TABLE bingos (
 		id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -202,7 +205,7 @@ func (s *Store) migrate() error {
 		}
 		if _, err := tx.Exec(migrations[i]); err != nil {
 			tx.Rollback()
-			return fmt.Errorf("migration %d : %w", i+1, err)
+			return fmt.Errorf("migration %d: %w", i+1, err)
 		}
 		if _, err := tx.Exec(fmt.Sprintf(`PRAGMA user_version = %d`, i+1)); err != nil {
 			tx.Rollback()
@@ -215,7 +218,7 @@ func (s *Store) migrate() error {
 	return nil
 }
 
-// querier est satisfait par *sql.DB et *sql.Tx.
+// querier is satisfied by both *sql.DB and *sql.Tx.
 type querier interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
@@ -269,7 +272,7 @@ func scanBingo(row scanner) (*Bingo, error) {
 	return &b, nil
 }
 
-// summarize calcule les champs dérivés à partir de l'état des cases.
+// summarize computes the derived fields from the cells' checked state.
 func (b *Bingo) summarize(pattern []bool) {
 	b.Pattern = pattern
 	b.Total = len(pattern)
@@ -323,7 +326,7 @@ func addEvent(ctx context.Context, q querier, bingoID int64, cellID *int64, kind
 	return err
 }
 
-// List renvoie tous les bingos (sans le détail des cases), du plus récemment actif au plus ancien.
+// List returns every bingo (without cell details), most recently active first.
 func (s *Store) List(ctx context.Context) ([]Bingo, error) {
 	bingos := make([]Bingo, 0)
 	err := s.inTx(ctx, func(tx *sql.Tx) error {
@@ -371,7 +374,7 @@ func (s *Store) List(ctx context.Context) ([]Bingo, error) {
 	return bingos, err
 }
 
-// Get renvoie un bingo avec ses cases.
+// Get returns a bingo with its cells.
 func (s *Store) Get(ctx context.Context, id int64) (*Bingo, error) {
 	return getBingo(ctx, s.db, id)
 }
@@ -397,7 +400,7 @@ func insertBingo(ctx context.Context, tx *sql.Tx, in BingoInput) (int64, error) 
 	return id, addEvent(ctx, tx, id, nil, EventCreated, "", "", ts)
 }
 
-// Create enregistre un nouveau bingo.
+// Create stores a new bingo.
 func (s *Store) Create(ctx context.Context, in BingoInput) (*Bingo, error) {
 	if err := in.normalize(); err != nil {
 		return nil, err
@@ -414,8 +417,8 @@ func (s *Store) Create(ctx context.Context, in BingoInput) (*Bingo, error) {
 	return out, err
 }
 
-// Update modifie le titre, la description et les libellés d'un bingo.
-// La taille de la grille et l'état de validation des cases sont conservés.
+// Update changes a bingo's title, description and cell labels.
+// The grid size and the cells' checked state are left untouched.
 func (s *Store) Update(ctx context.Context, id int64, in BingoInput) (*Bingo, error) {
 	var out *Bingo
 	err := s.inTx(ctx, func(tx *sql.Tx) error {
@@ -446,7 +449,7 @@ func (s *Store) Update(ctx context.Context, id int64, in BingoInput) (*Bingo, er
 	return out, err
 }
 
-// Delete supprime définitivement un bingo, ses cases et son historique.
+// Delete permanently removes a bingo, its cells and its history.
 func (s *Store) Delete(ctx context.Context, id int64) error {
 	res, err := s.db.ExecContext(ctx, `DELETE FROM bingos WHERE id = ?`, id)
 	if err != nil {
@@ -458,7 +461,7 @@ func (s *Store) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// SetArchived archive ou désarchive un bingo. Un bingo archivé est en lecture seule.
+// SetArchived archives or unarchives a bingo. An archived bingo is read-only.
 func (s *Store) SetArchived(ctx context.Context, id int64, archived bool) (*Bingo, error) {
 	var out *Bingo
 	err := s.inTx(ctx, func(tx *sql.Tx) error {
@@ -486,8 +489,8 @@ func (s *Store) SetArchived(ctx context.Context, id int64, archived bool) (*Bing
 	return out, err
 }
 
-// Duplicate crée un nouveau bingo vierge reprenant les cases d'un bingo existant,
-// éventuellement mélangées. title vide : le titre d'origine est repris.
+// Duplicate creates a fresh bingo with the cells of an existing one, optionally
+// shuffled. An empty title falls back to the source title.
 func (s *Store) Duplicate(ctx context.Context, id int64, title string, shuffle bool) (*Bingo, error) {
 	var out *Bingo
 	err := s.inTx(ctx, func(tx *sql.Tx) error {
@@ -527,9 +530,9 @@ func (b *Bingo) cell(id int64) *Cell {
 	return nil
 }
 
-// Validate valide une case et l'enregistre immédiatement, avec une note facultative.
-// Les lignes complétées par cette validation sont consignées dans l'historique.
-// Si la case est déjà validée, seule la note est mise à jour.
+// Validate checks a cell and persists it right away, with an optional note.
+// Lines completed by this validation are recorded in the history.
+// If the cell is already checked, only its note is updated.
 func (s *Store) Validate(ctx context.Context, bingoID, cellID int64, note string) (*Bingo, error) {
 	note = strings.TrimSpace(note)
 	if utf8.RuneCountInString(note) > maxNoteLen {
@@ -590,7 +593,7 @@ func (s *Store) Validate(ctx context.Context, bingoID, cellID int64, note string
 	return out, err
 }
 
-// Unvalidate annule la validation d'une case (et efface sa note).
+// Unvalidate unchecks a cell and clears its note.
 func (s *Store) Unvalidate(ctx context.Context, bingoID, cellID int64) (*Bingo, error) {
 	var out *Bingo
 	err := s.inTx(ctx, func(tx *sql.Tx) error {
@@ -622,7 +625,7 @@ func (s *Store) Unvalidate(ctx context.Context, bingoID, cellID int64) (*Bingo, 
 	return out, err
 }
 
-// History renvoie les événements les plus récents d'abord. bingoID à 0 : tous les bingos.
+// History returns events, most recent first. A bingoID of 0 means all bingos.
 func (s *Store) History(ctx context.Context, bingoID int64, limit int) ([]Event, error) {
 	if limit <= 0 || limit > 1000 {
 		limit = 1000

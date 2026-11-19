@@ -39,7 +39,7 @@ async function refreshEvents() {
   try {
     events.value = await api.bingoHistory(id)
   } catch {
-    // l'historique est secondaire : la grille reste utilisable
+    // history is secondary: the grid stays usable without it
   }
 }
 
@@ -68,7 +68,7 @@ async function load() {
 
 onMounted(load)
 
-// --- Validation d'une case ---
+// --- Cell validation ---
 const cellDialog = ref(false)
 const selected = ref<Cell | null>(null)
 const note = ref('')
@@ -119,7 +119,7 @@ async function unvalidate() {
   }
 }
 
-// --- Célébration quand une ligne est complétée ---
+// --- Celebration when a line is completed ---
 const celebration = ref<{ lines: string[]; full: boolean } | null>(null)
 const celebrating = ref(false)
 const confettiRun = ref(0)
@@ -135,7 +135,7 @@ function celebrate(lines: string[], isFull: boolean) {
 
 onBeforeUnmount(() => window.clearTimeout(confettiTimer))
 
-// --- Actions sur le bingo ---
+// --- Bingo actions ---
 const busy = ref(false)
 
 async function setArchived(value: boolean) {
@@ -223,7 +223,7 @@ async function remove() {
         <div class="head__actions">
           <v-btn
             v-if="!archived"
-            :to="`/bingos/${bingo.id}/modifier`"
+            :to="`/bingos/${bingo.id}/edit`"
             variant="tonal"
             :prepend-icon="mdiPencilOutline"
           >
@@ -321,7 +321,7 @@ async function remove() {
         </aside>
       </div>
 
-      <!-- Validation d'une case -->
+      <!-- Cell validation -->
       <v-dialog v-model="cellDialog">
         <v-card v-if="selected">
           <v-card-text class="cell-dialog">
@@ -384,7 +384,7 @@ async function remove() {
         </v-card>
       </v-dialog>
 
-      <!-- Rejouer -->
+      <!-- Replay -->
       <v-dialog v-model="duplicateDialog">
         <v-card>
           <v-card-title class="dialog-title">Rejouer cette grille</v-card-title>
@@ -403,7 +403,7 @@ async function remove() {
         </v-card>
       </v-dialog>
 
-      <!-- Suppression -->
+      <!-- Deletion -->
       <v-dialog v-model="deleteDialog">
         <v-card>
           <v-card-title class="dialog-title">Supprimer ce bingo ?</v-card-title>
@@ -485,13 +485,13 @@ async function remove() {
   }
 }
 
-/* --- Grille --- */
+/* --- Grid --- */
 .grid {
   display: grid;
   grid-template-columns: repeat(var(--n), minmax(0, 1fr));
   gap: clamp(4px, 1.2vw, 10px);
   width: 100%;
-  /* Garde la grille entière visible à l'écran sur ordinateur. */
+  /* Keeps the whole grid on screen on desktop. */
   max-width: max(340px, min(700px, 100dvh - 230px));
   margin: 0 auto;
 }
@@ -587,7 +587,7 @@ async function remove() {
   }
 }
 
-/* --- Colonne latérale --- */
+/* --- Side column --- */
 .side {
   display: grid;
   gap: 16px;
@@ -627,7 +627,7 @@ async function remove() {
   overflow-y: auto;
 }
 
-/* --- Dialogues --- */
+/* --- Dialogs --- */
 
 .mb {
   margin-bottom: 16px;

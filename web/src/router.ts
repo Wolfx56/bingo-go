@@ -1,22 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+// Paths are in English; page titles are user-facing and stay in French.
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: () => import('./views/HomeView.vue'), meta: { title: 'Mes bingos' } },
     {
-      path: '/nouveau',
+      path: '/new',
       component: () => import('./views/BingoFormView.vue'),
       meta: { title: 'Nouveau bingo' },
     },
     { path: '/bingos/:id(\\d+)', component: () => import('./views/BingoView.vue') },
     {
-      path: '/bingos/:id(\\d+)/modifier',
+      path: '/bingos/:id(\\d+)/edit',
       component: () => import('./views/BingoFormView.vue'),
       meta: { title: 'Modifier le bingo' },
     },
     {
-      path: '/historique',
+      path: '/history',
       component: () => import('./views/HistoryView.vue'),
       meta: { title: 'Historique' },
     },

@@ -46,7 +46,7 @@ function toggleTheme() {
         <v-icon :icon="mdiViewGridOutline" />
         <span class="nav-label">Bingos</span>
       </v-btn>
-      <v-btn to="/historique" variant="text" aria-label="Historique">
+      <v-btn to="/history" variant="text" aria-label="Historique">
         <v-icon :icon="mdiHistory" />
         <span class="nav-label">Historique</span>
       </v-btn>
@@ -60,7 +60,7 @@ function toggleTheme() {
     </v-app-bar>
 
     <v-main>
-      <!-- La clé force le remontage quand on passe d'un bingo à un autre. -->
+      <!-- The key forces a remount when navigating from one bingo to another. -->
       <router-view :key="route.path" />
     </v-main>
 
